@@ -1,5 +1,5 @@
 git config --global user.name "Ksenia"
-
+Внесла изменения
 git config --global user.email Kseniailina8@gmail.com – Кто изменяет документ,git запоминает
 git status-показывает внесенные изменения
 
