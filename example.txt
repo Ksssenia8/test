@@ -1,0 +1,28 @@
+git config --global user.name "Ksenia"
+
+git config --global user.email Kseniailina8@gmail.com – Кто изменяет документ,git запоминает
+git status-показывает внесенные изменения
+
+git add .(или имя файла) – добавить изменения на коммит
+
+git commit -m "Изменения внесены 23.10.2023"-запоминает версию(коммит)всех файлов
+
+git clone https://github.com/Ksssenia8/test.git - Получить(клонировать) репозиторий casetools
+git log-история коммитов
+git checkout(хэш)- возврвщение в комиту
+git push (имя репозитория) (ветка)	
+git push origin master -загрузка репозитория в ветку master
+git push origin main
+
+git branch- список всех веток
+git checkout (имя ветки)-переход на ветку
+
+Добавить и удалить файлы из проекта
+touch newfile.txt
+git add newfile.txt
+git rm filename
+
+git rebase (имя ветки) – записываем изменения с ветки в другую ветку
+ОТКАТ
+git log
+git checkout abcdef1234567890 -- path/to/file.txt
