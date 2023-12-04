@@ -1,0 +1,5 @@
+[tool.black]
+line-length = 10
+extend-ignore = 'E203'
+skip-string-normalization = true
+quiet = true

@@ -1,0 +1,158 @@
+import tkinter as tk
+from tkinter import ttk
+from pymongo import MongoClient
+
+class MatchForm:
+    def __init__(self, root, key_prefix):
+        self.foul_frame = tk.Frame(root)
+        self.penalty_frame = tk.Frame(root)
+        self.client = MongoClient('localhost', 27017)
+        self.db = self.client['22305']
+        self.matches_collection = self.db[key_prefix + "matches"]
+        self.teams_collection = self.db[key_prefix + "teams"]
+
+        self.labels = ["Домашняя команда:", "Гостевая команда:", "Дата:", "Счет:", "Голы:", "Фолы:", "Пенальти:", "Удары по воротам (дома):", "Удары по воротам (гости):"]
+        self.entries = []
+        self.team_comboboxes = []
+
+        for i, label_text in enumerate(self.labels):
+            label = tk.Label(root, text=label_text)
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+
+            if label_text in ["Домашняя команда:", "Гостевая команда:"]:
+                teams = [team["name"] for team in self.teams_collection.find()]
+                team_combobox = ttk.Combobox(root, values=teams)
+                team_combobox.grid(row=i, column=1, padx=10, pady=5)
+                self.team_comboboxes.append(team_combobox)
+            elif label_text in ["Голы:", "Фолы:", "Пенальти:"]:
+                frame = tk.Frame(root)
+                frame.grid(row=i, column=1, padx=10, pady=5, columnspan=2)
+
+                if label_text == "Голы:":
+                    position_label = tk.Label(frame, text="Позиция:")
+                    position_label.grid(row=0, column=0, padx=5, pady=5)
+                    position_entry = tk.Entry(frame)
+                    position_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                    minute_label = tk.Label(frame, text="Минута:")
+                    minute_label.grid(row=1, column=0, padx=5, pady=5)
+                    minute_entry = tk.Entry(frame)
+                    minute_entry.grid(row=1, column=1, padx=5, pady=5)
+
+                    author_label = tk.Label(frame, text="Автор гола:")
+                    author_label.grid(row=2, column=0, padx=5, pady=5)
+                    author_entry = tk.Entry(frame)
+                    author_entry.grid(row=2, column=1, padx=5, pady=5)
+
+                    assist_label = tk.Label(frame, text="Ассистент:")
+                    assist_label.grid(row=3, column=0, padx=5, pady=5)
+                    assist_entry = tk.Entry(frame)
+                    assist_entry.grid(row=3, column=1, padx=5, pady=5)
+
+                elif label_text == "Фолы:":
+                    card_type_label = tk.Label(frame, text="Тип карточки:")
+                    card_type_label.grid(row=0, column=0, padx=5, pady=5)
+                    self.card_type_var = tk.StringVar()
+                    card_type_combobox = ttk.Combobox(frame, textvariable=self.card_type_var, values=["yellow", "red"])
+                    card_type_combobox.grid(row=0, column=1, padx=5, pady=5)
+
+                    player_label = tk.Label(frame, text="Игрок:")
+                    player_label.grid(row=1, column=0, padx=5, pady=5)
+                    player_entry = tk.Entry(frame)
+                    player_entry.grid(row=1, column=1, padx=5, pady=5)
+
+                    minute_label = tk.Label(frame, text="Минута:")
+                    minute_label.grid(row=2, column=0, padx=5, pady=5)
+                    minute_entry = tk.Entry(frame)
+                    minute_entry.grid(row=2, column=1, padx=5, pady=5)
+
+                    reason_label = tk.Label(frame, text="Причина:")
+                    reason_label.grid(row=3, column=0, padx=5, pady=5)
+                    reason_entry = tk.Entry(frame)
+                    reason_entry.grid(row=3, column=1, padx=5, pady=5)
+
+                elif label_text == "Пенальти:":
+                    minute_label = tk.Label(frame, text="Минута:")
+                    minute_label.grid(row=0, column=0, padx=5, pady=5)
+                    minute_entry = tk.Entry(frame)
+                    minute_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                    whose_fault_label = tk.Label(frame, text="Кто:")
+                    whose_fault_label.grid(row=1, column=0, padx=5, pady=5)
+                    whose_fault_entry = tk.Entry(frame)
+                    whose_fault_entry.grid(row=1, column=1, padx=5, pady=5)
+
+                    converted_label = tk.Label(frame, text="Преобразовано:")
+                    converted_label.grid(row=2, column=0, padx=5, pady=5)
+                    self.converted_var = tk.StringVar()
+                    converted_combobox = ttk.Combobox(frame, textvariable=self.converted_var, values=["True", "False"])
+                    converted_combobox.grid(row=2, column=1, padx=5, pady=5)
+
+            else:
+                entry = tk.Entry(root)
+                entry.grid(row=i, column=1, padx=10, pady=5)
+                self.entries.append(entry)
+
+        add_button = tk.Button(root, text="Добавить матч", command=self.add_match)
+        add_button.grid(row=len(self.labels) + 1, column=0, columnspan=2, pady=10)
+
+    def add_match(self):
+        home_team = self.team_comboboxes[0].get()
+        away_team = self.team_comboboxes[1].get()
+        date = self.entries[0].get()
+        score = self.entries[1].get()
+        home_kicks = self.entries[2].get()
+        away_kicks = self.entries[3].get()
+        home_kicks = int(home_kicks) if home_kicks.isdigit() else 0
+        away_kicks = int(away_kicks) if away_kicks.isdigit() else 0
+
+        goals = self.get_goals_data()
+        fouls = self.get_fouls_data()
+
+        self.matches_collection.insert_one({
+            "home team": home_team,
+            "away team": away_team,
+            "date": date,
+            "score": score,
+            "goals": goals,
+            "fouls": fouls,
+            "home kicks": home_kicks,
+            "away kicks": away_kicks
+        })
+        print("Матч успешно добавлен в базу данных.")
+
+        self.clear_fields()
+
+    def get_goals_data(self):
+        position = self.entries[4].get() if len(self.entries) > 4 else ""
+        minute = self.entries[5].get() if len(self.entries) > 5 else ""
+        author = self.entries[6].get() if len(self.entries) > 6 else ""
+        assist = self.entries[7].get() if len(self.entries) > 7 else ""
+
+        return [{"position": position, "minute": minute, "author": author, "assist": assist}]
+
+    def get_fouls_data(self):
+        if not hasattr(self, 'foul_frame'):
+            return []
+
+        children = self.foul_frame.winfo_children()
+        card_type = children[1].get() if len(children) > 1 else ""
+        player = children[3].get() if len(children) > 3 else ""
+        minute = children[5].get() if len(children) > 5 else ""
+        reason = children[7].get() if len(children) > 7 else ""
+
+        return [{"card": card_type, "player": player, "minute": minute, "reason": reason}]
+
+    def clear_fields(self):
+        for entry in self.entries:
+            entry.delete(0, tk.END)
+
+# Создание основного окна
+root = tk.Tk()
+root.title("Форма для ввода данных об играх")
+
+# Создание экземпляра класса MatchForm
+match_form = MatchForm(root, key_prefix="")
+
+# Запуск основного цикла событий
+root.mainloop()
